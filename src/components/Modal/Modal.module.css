@@ -1,0 +1,21 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(222, 231, 205, 0.45);
+  backdrop-filter: blur(10px);
+  z-index: 1200;
+  overflow: hidden;
+}
+
+.modal {
+  max-width: calc(100vw - 30%);
+  max-height: calc(100vh - 30%);
+  border-radius: 10px;
+  overflow: hidden;
+}
