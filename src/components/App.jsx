@@ -91,7 +91,7 @@ export default function App() {
 
     getDataFromApi()
 
-  }, [state.findText, state.page]);
+  }, [state.findText, state.page, state.images]);
 
   const handleFind = (valueSearch) => {
     if (state.findText === valueSearch) {
