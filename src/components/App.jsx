@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react'
+import React, { useState, useReducer, useEffect } from 'react'
 import { getApi } from '../service/api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -28,8 +28,6 @@ const reducer = (state, action) => {
       return { ...state, findText: action.payload };
     case 'page':
       return { ...state, page: action.payload };
-    case 'images':
-      return { ...state, images: action.payload };
     case 'isLoad':
       return { ...state, isLoad: action.payload };
     case 'isActiveButton':
@@ -50,6 +48,7 @@ const reducer = (state, action) => {
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [images, setImages] = useState([])
   
   useEffect(() => {
     if (state.findText === '') {
@@ -70,7 +69,7 @@ export default function App() {
           toast.info('Please enter the correct request.', optionNotification);
           return
         }
-        dispatch({ type: 'images', payload: [...state.images, ...data.hits] });
+       setImages(p=>[...p, ...data.hits])
         dispatch({ type: 'isActiveButton', payload: true });
 
       
@@ -99,7 +98,7 @@ export default function App() {
     }
     dispatch({ type: 'findText', payload: valueSearch });
     dispatch({ type: 'page', payload: 1 }); 
-    dispatch({ type: 'images', payload: [] })
+    setImages([])
     dispatch({ type: 'isActiveButton', payload: false });
 
   };
@@ -118,7 +117,7 @@ export default function App() {
      <div>
       <Searchbar handleFind={handleFind} />
       {state.isLoad && <Loader />}
-      <ImageGallery images={state.images} onOpenModal={toggleModal} />
+      {state.images && <ImageGallery images={images} onOpenModal={toggleModal} />}
       {state.isActiveButton && <Button handleLoadMore={handleLoadMore} />}
       <ToastContainer />
       {state.showModal && <Modal src={state.largeImages} tags={state.tags} onCloseModal={toggleModal} />} 
