@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { useReducer, useEffect } from 'react'
 import { getApi } from '../service/api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,8 +10,7 @@ import Loader from 'components/Loader/Loader'
 import optionNotification from 'components/Notification/Notification'
 import Modal from 'components/Modal/Modal'
 
-export default class App extends Component {
-  state = {
+const initialState = {
     findText: '',
     page: 1,
     images: [],
@@ -21,100 +20,109 @@ export default class App extends Component {
     showModal: false,
     largeImages: '',
     tags: ''
-  }
+}
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'findText':
+      return { ...state, findText: action.payload };
+    case 'page':
+      return { ...state, page: action.payload };
+    case 'images':
+      return { ...state, images: action.payload };
+    case 'isLoad':
+      return { ...state, isLoad: action.payload };
+    case 'isActiveButton':
+      return { ...state, isActiveButton: action.payload };
+    case 'error':
+      return { ...state, error: action.payload };
+    case 'showModal':
+      return { ...state, showModal: action.payload };
+    case 'largeImages':
+      return { ...state, largeImages: action.payload };
+    case 'tags':
+      return { ...state, tags: action.payload };
   
-  componentDidUpdate(_, prevState) { 
-    const { findText, page, error} = this.state;
-    if (error) {
-      return toast.error('An error occurred. Please try again later.', optionNotification)
-    }
+    default:
+      break;
+  }
+}
 
-    if (prevState.findText !== findText || prevState.page !== page) {
-      this.setState({ isLoad: true })
-      this.getDataFromApi(findText, page);
-    }
-    if (prevState.findText !== findText) {
-      this.setState({
-        images: [],
-        isActiveButton: false
-      })
-    }
-  } 
+export default function App() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  
+  useEffect(() => {
+    if (state.findText === '') {
+      return
+    };
+    async function getDataFromApi() {
+      dispatch({ type: 'isLoad', payload: true });
 
-  getDataFromApi = async (findText, page) => {
-    try {
-      const response = await getApi(findText, page);
-      if (!response.ok) {
-        throw new Error ()
-      }
-      const data = await response.json()
+      try {
+        const response = await getApi(state.findText, state.page);
+        if (!response.ok) {
+          throw new Error()
+        }
+        const data = await response.json()
 
-      if (data.hits.length === 0) {
-        this.setState({
-          isActiveButton: false,
-        })
-        toast.info('Please enter the correct request.', optionNotification);
-        return
-      } 
-      this.setState(prev => ({
-          images: [...prev.images, ...data.hits],
-          isActiveButton: true,
-        }))
+        if (data.hits.length === 0) {
+          dispatch({ type: 'isActiveButton', payload: false });
+          toast.info('Please enter the correct request.', optionNotification);
+          return
+        }
+        dispatch({ type: 'images', payload: [...state.images, ...data.hits] });
+        dispatch({ type: 'isActiveButton', payload: true });
+
       
-       if (page >= Math.ceil(data.totalHits / 12 )) {
-        this.setState({
-          isActiveButton: false,
-        })
-        toast.info('This was the last page with great pictures.', optionNotification)
-        return
+        if (state.page >= Math.ceil(data.totalHits / 12)) {
+          dispatch({ type: 'isActiveButton', payload: false });
+          toast.info('This was the last page with great pictures.', optionNotification);
+          return
+        };
+      }
+      catch (error) {
+        dispatch({ type: 'error', payload: error })
+        toast.error('An error occurred. Please try again later.', optionNotification);
+      }
+      finally {
+        dispatch({ type: 'isLoad', payload: false })
       }
     }
-    catch (error) {
-      this.setState({
-      error,
-    }) }
-    finally {this.setState({ isLoad: false })}
-  }
 
-  handleFind = (value) => {
-    if (value === '') {
-      this.setState({
-        images: [],
-        isActiveButton:false,
-      })
-     return toast.warn('Please enter for example, "cat", "bicycle", etc.', optionNotification)
+    getDataFromApi()
+
+  }, [state.findText, state.page]);
+
+  const handleFind = (valueSearch) => {
+    if (state.findText === valueSearch) {
+     return 
     }
-    this.setState({
-      findText: value,
-      page: 1,
-    })
-  }
+    dispatch({ type: 'findText', payload: valueSearch });
+    dispatch({ type: 'page', payload: 1 }); 
+    dispatch({ type: 'images', payload: [] })
+    dispatch({ type: 'isActiveButton', payload: false });
 
-  handleLoadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1}))
-  }
+  };
 
-  toggleModal = (largeImages, tags) => {
-    this.setState(prev => ({
-      showModal: !prev.showModal,
-      largeImages,
-      tags,
-    }))
-  }
-  render() {
-    
-    const { images, isLoad, isActiveButton, showModal, largeImages, tags } = this.state;
-    const { handleFind, handleLoadMore, toggleModal } = this;
-    return (
-      <div>
-        <Searchbar handleFind={handleFind} />
-        {isLoad && <Loader/>}
-        <ImageGallery images={images} onOpenModal={toggleModal} />
-        {isActiveButton && <Button handleLoadMore={handleLoadMore} />}
-        <ToastContainer />
-        {showModal && <Modal src={largeImages} tags={tags} onCloseModal={toggleModal} />}
-      </div>
-    )
-  }
+  const toggleModal = (largeImg, tags) => {
+    dispatch({type: 'showModal', payload: !state.showModal});
+    dispatch({type: 'largeImages', payload: largeImg});
+    dispatch({type: 'tags', payload: tags});
+  };
+
+  const handleLoadMore = () => {
+    dispatch({ type: 'page', payload: state.page + 1 });
+  };
+
+  return (
+     <div>
+      <Searchbar handleFind={handleFind} />
+      {state.isLoad && <Loader />}
+      <ImageGallery images={state.images} onOpenModal={toggleModal} />
+      {state.isActiveButton && <Button handleLoadMore={handleLoadMore} />}
+      <ToastContainer />
+      {state.showModal && <Modal src={state.largeImages} tags={state.tags} onCloseModal={toggleModal} />} 
+    </div>
+  )
 }
 

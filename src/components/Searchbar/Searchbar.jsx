@@ -1,52 +1,49 @@
-import React, { Component } from 'react'
+import React, { useState } from 'react'
+import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
 import css from './Searchbar.module.css';
+import optionNotification from 'components/Notification/Notification'
+import 'react-toastify/dist/ReactToastify.css';
 import { MdImageSearch } from 'react-icons/md';
 
+export default function Searchbar({handleFind}) {
+  const [value, setValue] = useState('');
 
-export default class Searchbar extends Component {
-  state = {
-    value: '',
-  }
-
-  static propTypes = {
-         handleFind: PropTypes.func.isRequired,
-     };
-
-  handleChange = (e) => {
+  const handleChange = (e) => {
     const { value } = e.target;
-    this.setState({value: value.trim()})
-  }
+    setValue(value.trim());
+  };
 
-  handleSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    if (value === '') {
+      toast.warn('Please enter for example, "cat", "bicycle", etc.', optionNotification);
+    }
+    handleFind(value);
+  };
+  
+  return (
+    <header className={css.searchbar}>
+      <form onSubmit={handleSubmit} className={css.searchForm}>
+        <button type="submit" className={css.searchFormBtn}>
+          <span className={css.btnLabel}><MdImageSearch className={css.iconSearch} /></span>
+        </button>
 
-    const { value } = this.state;
-    this.props.handleFind(value)
-  }
+        <input
+          className={css.input}
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={value}
+          onChange={handleChange}
+        />
+      </form>
+    </header>
+  );
+};
 
-  render() {
-    const { handleChange, handleSubmit } = this;
-    const { value } = this.state;
-
-    return (
-      <header className={css.searchbar}>
-        <form onSubmit={handleSubmit} className={css.searchForm}>
-          <button type="submit" className={css.searchFormBtn}>
-            <span className={css.btnLabel}><MdImageSearch className={css.iconSearch} /></span>
-          </button>
-
-          <input
-            className={css.input}
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={value}
-            onChange={handleChange}
-          />
-        </form>
-      </header>
-    )
-  }
-}
+Searchbar.propTypes = {
+         handleFind: PropTypes.func.isRequired,
+};
+    
