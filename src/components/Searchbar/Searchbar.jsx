@@ -21,7 +21,6 @@ export default function Searchbar({handleFind}) {
     }
     handleFind(value);
   };
-  
   return (
     <header className={css.searchbar}>
       <form onSubmit={handleSubmit} className={css.searchForm}>
